@@ -1,17 +1,33 @@
-// appointmentMiddleware.js
+const Constants = require('../../lib/constants');
+const db = require('../../lib/database');
 
-const Appointment = require('../../lib/database');
-
-// Middleware to check for duplicate bookings
-exports.checkDuplicateBooking = async (req, res, next) => {
+const appointmentMiddleware = async (req, res, next) => {
   try {
-    const { date } = req.body;
-    const existingAppointment = await Appointment.findOne({ date });
+    console.log('Appointment Middleware');
+  
+    // Retrieve the appointment collection name from the constants
+    const appointmentsCollection = Constants.COLLECTIONS.APPOINTMENTS;
+  
+    // Assuming appointment date and time are present in the request body
+    const appointmentDateTime = req.body.appointmentDateTime;
+  
+    // Check if there is an existing appointment with the same date and time
+    const existingAppointment = await db.getDb()
+      .collection(appointmentsCollection)
+      .findOne({ appointmentDateTime });
+  
     if (existingAppointment) {
-      return res.status(400).json({ success: false, message: 'Appointment already booked for this date' });
+      return res.status(409).json({ error: 'Duplicate appointment' });
     }
+  
+    // If there is no duplicate appointment, proceed to the next middleware or route handler
     next();
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    // Handle any errors that occurred during the middleware execution
+    console.error('Error in appointment middleware:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+module.exports = appointmentMiddleware;
+

@@ -1,105 +1,74 @@
-const { ObjectId } = require('mongodb');
-const Appointment = require('../../lib/database');
+const AppointmentsCoordinator = require('../coordinators/appointmentCoordinator');
 
-// Middleware to check for duplicate bookings
-exports.checkDuplicateBooking = async (req, res, next) => {
-  try {
-    const { date } = req.body;
+const getAppointments = async (req, res, next) => {
+  console.log('appointmentsController.getAppointments');
 
-    // Check if an appointment already exists for the specified date
-    const existingAppointment = await Appointment.findOne({ date });
+  const result = await AppointmentsCoordinator.getAppointments();
+  res.status(200).json(result);
+};
 
-    if (existingAppointment) {
-      return res.status(400).json({ success: false, message: 'Appointment already booked for this date' });
-    }
-
-    next();
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+const getAppointment = async (req, res, next) => {
+  console.log('appointmentsController.getAppointment');
+  const foundAppointment = await AppointmentsCoordinator.getAppointment(req.params.id);
+  
+  if (foundAppointment) {
+    res.status(200).json(foundAppointment);
+  } else {
+    res.status(404).json();
   }
 };
 
-// Create an appointment
-exports.createAppointment = async (req, res) => {
+const createAppointment = async (req, res, next) => {
   try {
-    const { name, email, date } = req.body;
-
-    // Insert the new appointment into the collection
-    const appointment = await Appointment.create({ name, email, date });
-
-    res.status(201).json({ success: true, appointment });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.log('appointmentsController.createAppointment');
+    const result = await AppointmentsCoordinator.createAppointment(req.body);
+    res.status(200).json(result);
+  } catch (ex) {
+    next(ex);
   }
 };
 
-// Get all appointments
-exports.getAppointments = async (req, res) => {
-  try {
-    // Retrieve all appointments from the collection
-    const appointments = await Appointment.find();
+const deleteAppointment = async (req, res, next) => {
+  console.log('appointmentsController.deleteAppointment');
+  
+  const deleteResult = await AppointmentsCoordinator.deleteAppointment(req.params.id);
 
-    res.json({ success: true, appointments });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+  if (deleteResult) {
+    res.status(204).json(deleteResult);
+  } else {
+    res.status(404).json();
   }
 };
 
-// Get a single appointment by ID
-exports.getAppointment = async (req, res) => {
-  try {
-    const appointmentId = req.params.id;
+const replaceAppointment = async (req, res, next) => {
+  console.log('appointmentsController.replaceAppointment');
 
-    // Retrieve the appointment with the specified ID from the collection
-    const appointment = await Appointment.findById(appointmentId);
-
-    if (!appointment) {
-      return res.status(404).json({ success: false, message: 'Appointment not found' });
-    }
-
-    res.json({ success: true, appointment });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+  const replaceResult = await AppointmentsCoordinator.replaceAppointment(req.params.id, req.body);
+  
+  if (replaceResult) {
+    res.status(200).json(replaceResult);
+  } else {
+    res.status(404).json();
   }
 };
 
-// Update an appointment
-exports.updateAppointment = async (req, res) => {
-  try {
-    const appointmentId = req.params.id;
-    const { name, email, date } = req.body;
+const updateAppointment = async (req, res, next) => {
+  console.log('appointmentsController.updateAppointment');
 
-    // Update the appointment with the specified ID in the collection
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      appointmentId,
-      { name, email, date },
-      { new: true }
-    );
-
-    if (!updatedAppointment) {
-      return res.status(404).json({ success: false, message: 'Appointment not found' });
-    }
-
-    res.json({ success: true, appointment: updatedAppointment });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+  const updateResult = await AppointmentsCoordinator.updateAppointment(req.params.id, req.body);
+  
+  if (updateResult) {
+    res.status(200).json(updateResult);
+  } else {
+    res.status(404).json();
   }
 };
 
-// Delete an appointment
-exports.deleteAppointment = async (req, res) => {
-  try {
-    const appointmentId = req.params.id;
-
-    // Delete the appointment with the specified ID from the collection
-    const deletedAppointment = await Appointment.findByIdAndDelete(appointmentId);
-
-    if (!deletedAppointment) {
-      return res.status(404).json({ success: false, message: 'Appointment not found' });
-    }
-
-    res.json({ success: true, message: 'Appointment deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+module.exports = {
+  getAppointments,
+  getAppointment,
+  createAppointment,
+  deleteAppointment,
+  replaceAppointment,
+  updateAppointment,
 };

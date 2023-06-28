@@ -1,58 +1,34 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const { MongoClient, ObjectId } = require('mongodb');
-const appointmentRoutes = require('./app/routes/appointmentRoutes');
-const { connectToDatabase } = require('./lib/database');
+const appointmentsRouter = require('./app/routes/appointmentRoutes');
+const errorHandlerMiddleware = require('./app/middleware/errorHandler');
+const db = require('./lib/database');
+const appointmentMiddleware = require('./app/middleware/appointmentMiddleware')
 
+const port = 3000;
 const app = express();
-const PORT = 3000;
 
-connectToDatabase();
-
-// Parse JSON request bodies
 app.use(bodyParser.json());
 
-//Connect to MongoDB using Mongoose
-mongoose.connect('mongodb://127.0.0.1/appointments', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+app.use('/api/v1/appointments', appointmentsRouter);
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-db.once('open', () => {
-  console.log('Connected to MongoDB');
-}); 
+// Error handlers always go last
+app.use(appointmentMiddleware());
+app.use(errorHandlerMiddleware());
 
-// Connect to MongoDB using the MongoDB driver
-const uri = 'mongodb://127.0.0.1/appointments';
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-client.connect((err) => {
-  if (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    return;
+const dbConfig = {
+  hostname: '127.0.0.1',
+  port: 27017,
+  database: 'arca',
+  options: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    maxPoolSize: 3,
   }
-  console.log('Connected to MongoDB');
-}); 
+};
 
-/* const dbConfig = {
-    hostname: '127.0.0.1',
-    port: 27017,
-    database: 'arca',
-    options: {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      maxPoolSize: 3,
-    }
-  };
-  
-  db.configure(dbConfig); */
+db.configure(dbConfig);
 
-// Set up routes
-app.use('/appointments', appointmentRoutes);
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
 });
