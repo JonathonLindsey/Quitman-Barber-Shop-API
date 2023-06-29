@@ -2,12 +2,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const appointmentsRouter = require('./app/routes/appointmentRoutes');
 const db = require('./lib/database');
-const errorHandlerMiddleware = require('./middleware/errorHandler');
-
+const errorHandlerMiddleware = require('./app/middleware/errorHandler');
+const cors = require('cors');
 
 const port = 3000;
 const app = express();
 
+app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/api/v1/appointments', appointmentsRouter);
